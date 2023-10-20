@@ -1,16 +1,25 @@
-import { Inject, Injectable, forwardRef } from '@nestjs/common';
+import {
+  HttpException,
+  HttpStatus,
+  Inject,
+  Injectable,
+  forwardRef,
+} from '@nestjs/common';
 
 import { CreateUserDto } from 'src/user/dto/create-user.dto';
 import { UserService } from 'src/user/user.service';
 import { LoginDTO, LoginResponse } from './dto/login.dto';
 import { JwtService } from '@nestjs/jwt';
 import { SessionResponse } from './dto/session.dto';
+import { MailerService } from '@nestjs-modules/mailer';
+import { VerifyEmailDto } from './dto/verifyEmail.dto';
 
 @Injectable()
 export class AuthService {
   constructor(
     @Inject(forwardRef(() => UserService)) private userService: UserService,
     private jwtService: JwtService,
+    private mailerService: MailerService,
   ) {}
 
   create(createUserDto: CreateUserDto) {
@@ -19,6 +28,10 @@ export class AuthService {
 
   async login(loginDTO: LoginDTO): Promise<LoginResponse> {
     const user = await this.userService.validateUser(loginDTO);
+
+    if (!user.isVerified) {
+      throw new HttpException(`User is not verified`, HttpStatus.FORBIDDEN);
+    }
     const payload = {
       email: user.email,
       role: user.role,
@@ -31,6 +44,66 @@ export class AuthService {
     return {
       message: 'Logged In successfully',
       tokens: user.tokens,
+    };
+  }
+
+  async sendVerificationEmail(email: string) {
+    const user = await this.userService.getUserByEmail(email);
+    if (!user) {
+      throw new HttpException(
+        `User with this email doesn't exist`,
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    if (user.isVerified) {
+      throw new HttpException(`User already verified`, HttpStatus.FORBIDDEN);
+    }
+    try {
+      const code = Math.floor(100000 + Math.random() * 900000);
+      user.otp = code;
+      await user.save();
+      await this.mailerService.sendMail({
+        to: email,
+        subject: 'Verification code of nest auth app',
+        html: ` <div>
+      <p>Your 6 digit verification code is: <strong>${code}</strong></p>
+  </div>`,
+      });
+
+      return {
+        message: 'Verification code sent successfully!',
+      };
+    } catch (err) {
+      throw new HttpException(
+        `Something went wrong!`,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async verifyEmail(verifyEmailDto: VerifyEmailDto) {
+    const user = await this.userService.getUserByEmail(verifyEmailDto.email);
+    if (!user) {
+      throw new HttpException(
+        `User with this email doesn't exist`,
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    if (user.isVerified) {
+      throw new HttpException(`User already verified`, HttpStatus.FORBIDDEN);
+    }
+
+    if (verifyEmailDto.code !== user.otp) {
+      throw new HttpException(`Invalid code`, HttpStatus.FORBIDDEN);
+    }
+
+    user.isVerified = true;
+    await user.save();
+
+    return {
+      message: 'User verified successfully',
     };
   }
 

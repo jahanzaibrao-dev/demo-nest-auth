@@ -14,6 +14,7 @@ import { LoginDTO, LoginResponse } from './dto/login.dto';
 import { Request } from 'express';
 import { AuthGuard } from './auth.guard';
 import { SessionResponse } from './dto/session.dto';
+import { SendEmailDto, VerifyEmailDto } from './dto/verifyEmail.dto';
 
 @Controller('auth')
 @ApiTags('Auth')
@@ -25,6 +26,16 @@ export class AuthController {
   @Post('/register')
   register(@Body() createUserDto: CreateUserDto) {
     return this.authService.create(createUserDto);
+  }
+
+  @Post('/email')
+  sendEmail(@Body() sendEmailDto: SendEmailDto) {
+    return this.authService.sendVerificationEmail(sendEmailDto.email);
+  }
+
+  @Post('/email/verify')
+  verifyEmail(@Body() verifyEmailDto: VerifyEmailDto) {
+    return this.authService.verifyEmail(verifyEmailDto);
   }
 
   @ApiResponse({ status: 200, type: LoginResponse })

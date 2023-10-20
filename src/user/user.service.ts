@@ -43,7 +43,7 @@ export class UserService {
       );
     }
 
-    const isValidPass = bcrypt.compare(loginDto.password, user.password);
+    const isValidPass = await bcrypt.compare(loginDto.password, user.password);
 
     if (!isValidPass) {
       throw new HttpException(
