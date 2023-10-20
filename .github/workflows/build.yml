@@ -30,7 +30,7 @@ jobs:
       - name: Check Code Style
         run: npm run lint
 
-        name: Build NEST Auth API
+      - name: Build NEST Auth API
         run: npm run build
         env:
           AWS_REGION: ${{ secrets.AWS_REGION }}
