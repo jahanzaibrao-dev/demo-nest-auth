@@ -29,8 +29,15 @@ export class User {
 
   @Prop({ default: UserRole.USER })
   role: UserRole;
+
   @Prop()
   tokens: JWTTokens;
+
+  @Prop({ default: false })
+  isVerified: boolean;
+
+  @Prop()
+  otp: number;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

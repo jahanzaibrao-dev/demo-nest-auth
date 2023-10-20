@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Body, Req, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Req,
+  UseGuards,
+  Delete,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import {
   CreateUserDto,
@@ -14,6 +22,7 @@ import { LoginDTO, LoginResponse } from './dto/login.dto';
 import { Request } from 'express';
 import { AuthGuard } from './auth.guard';
 import { SessionResponse } from './dto/session.dto';
+import { SendEmailDto, VerifyEmailDto } from './dto/verifyEmail.dto';
 
 @Controller('auth')
 @ApiTags('Auth')
@@ -25,6 +34,16 @@ export class AuthController {
   @Post('/register')
   register(@Body() createUserDto: CreateUserDto) {
     return this.authService.create(createUserDto);
+  }
+
+  @Post('/email')
+  sendEmail(@Body() sendEmailDto: SendEmailDto) {
+    return this.authService.sendVerificationEmail(sendEmailDto.email);
+  }
+
+  @Post('/email/verify')
+  verifyEmail(@Body() verifyEmailDto: VerifyEmailDto) {
+    return this.authService.verifyEmail(verifyEmailDto);
   }
 
   @ApiResponse({ status: 200, type: LoginResponse })
@@ -40,5 +59,12 @@ export class AuthController {
   @Get('/session')
   getSession(@Req() req: Request) {
     return this.authService.session(req);
+  }
+
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @Delete('/logout')
+  logout(@Req() req: Request) {
+    return this.authService.logout(req);
   }
 }
