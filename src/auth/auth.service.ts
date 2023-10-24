@@ -22,7 +22,7 @@ export class AuthService {
     private mailerService: MailerService,
   ) {}
 
-  create(createUserDto: CreateUserDto) {
+  registerUser(createUserDto: CreateUserDto) {
     return this.userService.create(createUserDto);
   }
 
@@ -63,6 +63,7 @@ export class AuthService {
       const code = Math.floor(100000 + Math.random() * 900000);
       user.otp = code;
       await user.save();
+      console.log('before send email');
       await this.mailerService.sendMail({
         to: email,
         subject: 'Verification code of nest auth app',
