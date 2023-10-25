@@ -7,13 +7,13 @@ import { UserRole } from 'src/user/schemas/user.schema';
 
 export const createUserDTOMock: CreateUserDto = {
   name: 'John Snow',
-  email: 'johnsnow@gmail.com',
+  email: 'johnSnow@gmail.com',
   password: 'testPassword',
   age: 17,
 };
 
 export const loginDtoMock: LoginDTO = {
-  email: 'johnsnow@gmail.com',
+  email: 'johnSnow@gmail.com',
   password: 'testPassword',
 };
 

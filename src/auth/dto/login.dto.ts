@@ -15,7 +15,7 @@ export class LoginResponse {
 }
 
 export class LoginDTO {
-  @ApiProperty({ type: String, name: 'email', example: 'johnsnow@gmail.com' })
+  @ApiProperty({ type: String, name: 'email', example: 'johnSnow@gmail.com' })
   @IsEmail({}, { message: 'Invalid Email!' })
   @IsNotEmpty({ message: 'Email must not be empty' })
   @IsString({ message: 'Email must be a string' })

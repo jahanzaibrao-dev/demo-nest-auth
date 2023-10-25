@@ -15,11 +15,10 @@ export class UserService {
       throw new HttpException('User already exists', HttpStatus.FORBIDDEN);
     }
     const hashedPassword = await bcrypt.hash(createUserDto.password, 5);
-    const newUser = new this.user({
+    const newUser = await this.user.create({
       ...createUserDto,
       password: hashedPassword,
     });
-    await newUser.save();
 
     return {
       message: 'Signed up successfully',
@@ -28,10 +27,6 @@ export class UserService {
         email: newUser.email,
       },
     };
-  }
-
-  findAll() {
-    return `This action returns all user`;
   }
 
   async validateUser(loginDto: LoginDTO) {
