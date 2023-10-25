@@ -1,7 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UserService } from './user.service';
 import { User } from './schemas/user.schema';
-import { Model } from 'mongoose';
 import { getModelToken } from '@nestjs/mongoose';
 import {
   createUserDTOMock,
@@ -16,7 +15,6 @@ import { HttpException, HttpStatus } from '@nestjs/common';
 
 describe('UserService', () => {
   let service: UserService;
-  let userModel: Model<User>;
   const userModelMock = createSpyObj('User', ['findOne', 'create']);
   const createSpy = jest.fn();
 
@@ -32,7 +30,6 @@ describe('UserService', () => {
     }).compile();
 
     service = module.get<UserService>(UserService);
-    userModel = module.get<Model<User>>(getModelToken(User.name));
     userModelMock.create = jest.fn().mockImplementation((createUserDto) => ({
       ...createUserDto,
       _id: 'uniqueId',
@@ -116,9 +113,7 @@ describe('UserService', () => {
       payload.password = 'wr0ngP@ssw0rd';
       const findOneSpy =
         userModelMock.findOne.mockResolvedValueOnce(verifiedUserMock);
-      const spyBcryptCompare = (bcrypt.compare = jest
-        .fn()
-        .mockResolvedValueOnce(false));
+      bcrypt.compare = jest.fn().mockResolvedValueOnce(false);
 
       expect(service.validateUser(payload)).rejects.toThrowError(
         new HttpException(
