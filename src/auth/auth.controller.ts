@@ -67,4 +67,9 @@ export class AuthController {
   logout(@Req() req: Request) {
     return this.authService.logout(req);
   }
+
+  @Get('/test')
+  test() {
+    return 'Hello World!';
+  }
 }

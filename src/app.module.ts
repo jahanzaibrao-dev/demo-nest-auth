@@ -7,7 +7,9 @@ import { AuthService } from './auth/auth.service';
 import { MailerModule } from '@nestjs-modules/mailer';
 
 const getDatabaseURI = () => {
-  console.log(process.env.DB_CONNECTION_URI);
+  if (process.env.NODE_ENV == 'test') {
+    return process.env.TEST_DB_URI;
+  }
   return process.env.DB_CONNECTION_URI || '';
 };
 
