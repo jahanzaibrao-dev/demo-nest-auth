@@ -33,7 +33,7 @@ export class AuthController {
   @ApiForbiddenResponse({ description: 'User already exists' })
   @Post('/register')
   register(@Body() createUserDto: CreateUserDto) {
-    return this.authService.create(createUserDto);
+    return this.authService.registerUser(createUserDto);
   }
 
   @Post('/email')

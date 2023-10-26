@@ -13,7 +13,7 @@ export class CreateUserResponse {
   @ApiProperty({
     example: {
       name: 'John Snow',
-      email: 'johnsnow@gmail.com',
+      email: 'johnSnow@gmail.com',
     },
   })
   user: {
@@ -28,7 +28,7 @@ export class CreateUserDto {
   @IsOptional()
   readonly name?: string;
 
-  @ApiProperty({ type: String, name: 'email', example: 'johnsnow@gmail.com' })
+  @ApiProperty({ type: String, name: 'email', example: 'johnSnow@gmail.com' })
   @IsEmail({}, { message: 'Invalid Email!' })
   @IsNotEmpty({ message: 'Email must not be empty' })
   @IsString({ message: 'Email must be a string' })

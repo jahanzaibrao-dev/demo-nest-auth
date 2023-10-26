@@ -5,7 +5,7 @@ export class SessionResponse {
   @ApiProperty({ example: 'John Snow' })
   readonly name: string;
 
-  @ApiProperty({ example: 'johnsnow@gmail.com' })
+  @ApiProperty({ example: 'johnSnow@gmail.com' })
   readonly email: string;
 
   @ApiProperty({ example: 17 })
