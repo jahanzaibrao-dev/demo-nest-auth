@@ -8,7 +8,6 @@ import { MailerModule } from '@nestjs-modules/mailer';
 
 const getDatabaseURI = () => {
   if (process.env.NODE_ENV == 'test') {
-    console.log('connecting to test db: ', process.env.TEST_DB_URI);
     return process.env.TEST_DB_URI;
   }
   return process.env.DB_CONNECTION_URI || '';
