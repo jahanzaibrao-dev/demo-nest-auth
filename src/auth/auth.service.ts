@@ -120,13 +120,6 @@ export class AuthService {
 
   async logout(req) {
     const user = await this.userService.getUserByEmail(req.user?.email);
-    if (!user) {
-      throw new HttpException(
-        `User with this email doesn't exist`,
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-
     await user.updateOne({ $unset: { tokens: 1 } });
 
     return {

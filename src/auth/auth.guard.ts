@@ -24,29 +24,41 @@ export class AuthGuard implements CanActivate {
   }
 
   async validateRequest(req) {
+    const authHeader = req.headers.authorization;
+    const bearer = authHeader.split(' ')[0];
+    const token = authHeader.split(' ')[1];
+
+    if (bearer !== 'Bearer' || !token) {
+      throw new UnauthorizedException();
+    }
+
+    let jwtUser;
+
     try {
-      const authHeader = req.headers.authorization;
-      const bearer = authHeader.split(' ')[0];
-      const token = authHeader.split(' ')[1];
-
-      if (bearer !== 'Bearer' || !token) {
-        throw new UnauthorizedException();
-      }
-
-      const jwtUser = this.jwtService.verify(token, {
+      jwtUser = this.jwtService.verify(token, {
         secret: process.env.ACCESS_TOKEN_SECRET,
       });
-
-      const user = await this.userService.getUserByEmail(jwtUser?.email);
-
-      if (!user || !user.tokens || user.tokens.accessToken !== token) {
-        throw new UnauthorizedException({ message: 'User is not authorized' });
-      }
-
-      req.user = jwtUser;
-      return true;
     } catch (e) {
       throw new UnauthorizedException({ message: 'User is not authorized' });
     }
+
+    const user = await this.userService.getUserByEmail(jwtUser?.email);
+
+    if (!user) {
+      throw new UnauthorizedException({ message: 'User is not present' });
+    }
+
+    if (!user.tokens) {
+      throw new UnauthorizedException({ message: 'Tokens are not present' });
+    }
+
+    if (user.tokens.accessToken !== token) {
+      throw new UnauthorizedException({
+        message: 'Token is either old or expired',
+      });
+    }
+
+    req.user = jwtUser;
+    return true;
   }
 }

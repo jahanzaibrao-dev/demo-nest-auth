@@ -11,15 +11,17 @@ import {
   unverifiedUserWithOtpMock,
 } from 'src/auth/mocks/auth.mocks';
 import { getModelToken } from '@nestjs/mongoose';
-import { User } from 'src/user/schemas/user.schema';
+import { User, UserRole } from 'src/user/schemas/user.schema';
 import { MailerService } from '@nestjs-modules/mailer';
 import { VerifyEmailDto } from 'src/auth/dto/verifyEmail.dto';
+import { AuthService } from 'src/auth/auth.service';
 
-describe('AppController (e2e)', () => {
+describe('AuthController (e2e)', () => {
   let app: INestApplication;
   let server;
   let userModel: Model<User>;
   let mailerService: MailerService;
+  let authService: AuthService;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -33,6 +35,7 @@ describe('AppController (e2e)', () => {
     server = app.getHttpServer();
     userModel = moduleFixture.get(getModelToken(User.name));
     mailerService = moduleFixture.get<MailerService>(MailerService);
+    authService = moduleFixture.get<AuthService>(AuthService);
   });
 
   afterAll(async () => {
@@ -660,6 +663,157 @@ describe('AppController (e2e)', () => {
         .expect(400);
 
       expect(response.body.message).toContain('Password must be a string');
+    });
+  });
+
+  describe('session', () => {
+    let savedUser;
+
+    beforeEach(async () => {
+      const hashedPass = await bcrypt.hash(createUserDTOMock.password, 5);
+      const mockUser = {
+        ...createUserDTOMock,
+        password: hashedPass,
+        otp: unverifiedUserWithOtpMock.otp,
+        isVerified: true,
+      };
+      savedUser = await userModel.create(mockUser);
+      const tokens = authService.generateTokens({
+        email: savedUser.email,
+        role: savedUser.role,
+      });
+      savedUser.tokens = tokens;
+      await savedUser.save();
+    });
+
+    it('should_validate_access_token_and_return_user_session', async () => {
+      const accessToken = savedUser.tokens.accessToken;
+      const response = await request(server)
+        .get('/auth/session')
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      expect(response.body.email).toEqual(savedUser.email);
+    });
+
+    it('should_throw_unauthorized_exception_if_token_is_missing', async () => {
+      const response = await request(server)
+        .get('/auth/session')
+        .auth('', { type: 'bearer' })
+        .expect(401);
+
+      expect(response.body.message).toEqual('Unauthorized');
+    });
+
+    it('should_throw_unauthorized_exception_if_token_is_invalid', async () => {
+      const response = await request(server)
+        .get('/auth/session')
+        .auth('InvalidToken', { type: 'bearer' })
+        .expect(401);
+
+      expect(response.body.message).toEqual('User is not authorized');
+    });
+
+    it('should_throw_unauthorized_if_email_present_in_accessToken_is_invalid', async () => {
+      const accessToken = authService.generateTokens({
+        email: 'wrongEmail@gmail.com',
+        role: UserRole.USER,
+      }).accessToken;
+
+      const response = await request(server)
+        .get('/auth/session')
+        .auth(accessToken, { type: 'bearer' })
+        .expect(401);
+
+      expect(response.body.message).toEqual('User is not present');
+    });
+
+    it('should_throw_unauthorized_if_tokens_are_not_present_in_db', async () => {
+      const accessToken = savedUser.tokens.accessToken;
+      await savedUser.updateOne({ $unset: { tokens: 1 } });
+      const response = await request(server)
+        .get('/auth/session')
+        .auth(accessToken, { type: 'bearer' })
+        .expect(401);
+
+      expect(response.body.message).toEqual('Tokens are not present');
+    });
+  });
+
+  describe('logout', () => {
+    let savedUser;
+
+    beforeEach(async () => {
+      const hashedPass = await bcrypt.hash(createUserDTOMock.password, 5);
+      const mockUser = {
+        ...createUserDTOMock,
+        password: hashedPass,
+        otp: unverifiedUserWithOtpMock.otp,
+        isVerified: true,
+      };
+      savedUser = await userModel.create(mockUser);
+      const tokens = authService.generateTokens({
+        email: savedUser.email,
+        role: savedUser.role,
+      });
+      savedUser.tokens = tokens;
+      await savedUser.save();
+    });
+
+    it('should_logout_a_user_successfully', async () => {
+      const accessToken = savedUser.tokens.accessToken;
+      const response = await request(server)
+        .delete('/auth/logout')
+        .auth(accessToken, { type: 'bearer' })
+        .expect(200);
+
+      const updatedUser = await userModel.findOne({ email: savedUser.email });
+
+      expect(response.body.message).toEqual('User Logged out successfully!');
+      expect(updatedUser.tokens).toBeUndefined();
+    });
+
+    it('should_throw_unauthorized_exception_if_token_is_missing', async () => {
+      const response = await request(server)
+        .delete('/auth/logout')
+        .auth('', { type: 'bearer' })
+        .expect(401);
+
+      expect(response.body.message).toEqual('Unauthorized');
+    });
+
+    it('should_throw_unauthorized_exception_if_token_is_invalid', async () => {
+      const response = await request(server)
+        .delete('/auth/logout')
+        .auth('InvalidToken', { type: 'bearer' })
+        .expect(401);
+
+      expect(response.body.message).toEqual('User is not authorized');
+    });
+
+    it('should_throw_unauthorized_if_email_present_in_accessToken_is_invalid', async () => {
+      const accessToken = authService.generateTokens({
+        email: 'wrongEmail@gmail.com',
+        role: UserRole.USER,
+      }).accessToken;
+
+      const response = await request(server)
+        .delete('/auth/logout')
+        .auth(accessToken, { type: 'bearer' })
+        .expect(401);
+
+      expect(response.body.message).toEqual('User is not present');
+    });
+
+    it('should_throw_unauthorized_if_tokens_are_not_present_in_db', async () => {
+      const accessToken = savedUser.tokens.accessToken;
+      await savedUser.updateOne({ $unset: { tokens: 1 } });
+      const response = await request(server)
+        .delete('/auth/logout')
+        .auth(accessToken, { type: 'bearer' })
+        .expect(401);
+
+      expect(response.body.message).toEqual('Tokens are not present');
     });
   });
 });
