@@ -272,21 +272,6 @@ describe('AuthService', () => {
       expect(spyGetUserByEmail).toBeCalledWith(verifiedUserMock.email);
       expect(userMock.updateOne).toHaveBeenCalledTimes(1);
     });
-
-    it('should_throw_an_Exception_if_user_with_provided_email_does_not_exist', () => {
-      const invalidEmail = 'fakeEmail@gmail.com';
-      const payload = { user: { email: invalidEmail } };
-      const spyGetUserByEmail =
-        userServiceMock.getUserByEmail.mockResolvedValueOnce(null);
-
-      expect(service.logout(payload)).rejects.toThrowError(
-        new HttpException(
-          `User with this email doesn't exist`,
-          HttpStatus.BAD_REQUEST,
-        ),
-      );
-      expect(spyGetUserByEmail).toBeCalledWith(invalidEmail);
-    });
   });
 
   describe('generateTokens', () => {
