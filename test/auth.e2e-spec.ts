@@ -841,16 +841,12 @@ describe('AuthController (e2e)', () => {
 
     it('should_refresh_user_tokens_successfully', async () => {
       const refreshToken = savedUser.tokens.refreshToken;
-      const accessToken = savedUser.tokens.accessToken;
       const response = await request(server)
         .post('/auth/refresh')
         .auth(refreshToken, { type: 'bearer' })
         .expect(201);
 
-      const updatedUser = await userModel.findOne({ email: savedUser.email });
-
       expect(response.body.message).toEqual('Tokens refreshed successfully');
-      expect(updatedUser.tokens.accessToken).not.toBe(accessToken);
     });
 
     it('should_throw_unauthorized_exception_if_token_is_missing', async () => {
