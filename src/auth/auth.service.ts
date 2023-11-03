@@ -8,7 +8,7 @@ import {
 
 import { CreateUserDto } from 'src/user/dto/create-user.dto';
 import { UserService } from 'src/user/user.service';
-import { LoginDTO, LoginResponse } from './dto/login.dto';
+import { LoginDTO, TokensResponse } from './dto/login.dto';
 import { JwtService } from '@nestjs/jwt';
 import { SessionResponse } from './dto/session.dto';
 import { MailerService } from '@nestjs-modules/mailer';
@@ -26,7 +26,7 @@ export class AuthService {
     return this.userService.create(createUserDto);
   }
 
-  async login(loginDTO: LoginDTO): Promise<LoginResponse> {
+  async login(loginDTO: LoginDTO): Promise<TokensResponse> {
     const user = await this.userService.validateUser(loginDTO);
 
     if (!user.isVerified) {
@@ -124,6 +124,17 @@ export class AuthService {
 
     return {
       message: 'User Logged out successfully!',
+    };
+  }
+
+  async refreshToken(req): Promise<TokensResponse> {
+    const user = await this.userService.getUserByEmail(req.user?.email);
+    user.tokens = this.generateTokens({ email: user.email, role: user.role });
+    await user.save();
+
+    return {
+      message: 'Tokens refreshed successfully',
+      tokens: user.tokens,
     };
   }
 

@@ -230,6 +230,7 @@ describe('AuthController (e2e)', () => {
     });
 
     it('should_send_an_otp_to_user_email_successfully', async () => {
+      spySendMail.mockResolvedValueOnce({});
       const expectedResponse = {
         message: 'Verification code sent successfully!',
       };
@@ -240,6 +241,7 @@ describe('AuthController (e2e)', () => {
         .expect(201);
 
       expect(response.body).toEqual(expectedResponse);
+      expect(spySendMail).toHaveBeenCalledTimes(1);
     });
 
     it('should_throw_an_exception_if_user_does_not_exist', async () => {
@@ -811,6 +813,84 @@ describe('AuthController (e2e)', () => {
       const response = await request(server)
         .delete('/auth/logout')
         .auth(accessToken, { type: 'bearer' })
+        .expect(401);
+
+      expect(response.body.message).toEqual('Tokens are not present');
+    });
+  });
+
+  describe('refreshToken', () => {
+    let savedUser;
+
+    beforeEach(async () => {
+      const hashedPass = await bcrypt.hash(createUserDTOMock.password, 5);
+      const mockUser = {
+        ...createUserDTOMock,
+        password: hashedPass,
+        otp: unverifiedUserWithOtpMock.otp,
+        isVerified: true,
+      };
+      savedUser = await userModel.create(mockUser);
+      const tokens = authService.generateTokens({
+        email: savedUser.email,
+        role: savedUser.role,
+      });
+      savedUser.tokens = tokens;
+      await savedUser.save();
+    });
+
+    it('should_refresh_user_tokens_successfully', async () => {
+      const refreshToken = savedUser.tokens.refreshToken;
+      const accessToken = savedUser.tokens.accessToken;
+      const response = await request(server)
+        .post('/auth/refresh')
+        .auth(refreshToken, { type: 'bearer' })
+        .expect(201);
+
+      const updatedUser = await userModel.findOne({ email: savedUser.email });
+
+      expect(response.body.message).toEqual('Tokens refreshed successfully');
+      expect(updatedUser.tokens.accessToken).not.toBe(accessToken);
+    });
+
+    it('should_throw_unauthorized_exception_if_token_is_missing', async () => {
+      const response = await request(server)
+        .post('/auth/refresh')
+        .auth('', { type: 'bearer' })
+        .expect(401);
+
+      expect(response.body.message).toEqual('Unauthorized');
+    });
+
+    it('should_throw_unauthorized_exception_if_token_is_invalid', async () => {
+      const response = await request(server)
+        .post('/auth/refresh')
+        .auth('InvalidToken', { type: 'bearer' })
+        .expect(401);
+
+      expect(response.body.message).toEqual('Invalid Refresh Token');
+    });
+
+    it('should_throw_unauthorized_if_email_present_in_refreshToken_is_invalid', async () => {
+      const refreshToken = authService.generateTokens({
+        email: 'wrongEmail@gmail.com',
+        role: UserRole.USER,
+      }).refreshToken;
+
+      const response = await request(server)
+        .post('/auth/refresh')
+        .auth(refreshToken, { type: 'bearer' })
+        .expect(401);
+
+      expect(response.body.message).toEqual('User is not present');
+    });
+
+    it('should_throw_unauthorized_if_tokens_are_not_present_in_db', async () => {
+      const refreshToken = savedUser.tokens.refreshToken;
+      await savedUser.updateOne({ $unset: { tokens: 1 } });
+      const response = await request(server)
+        .post('/auth/refresh')
+        .auth(refreshToken, { type: 'bearer' })
         .expect(401);
 
       expect(response.body.message).toEqual('Tokens are not present');

@@ -13,7 +13,7 @@ import {
   verifiedUserMock,
 } from './mocks/auth.mocks';
 import { createSpyObj } from 'jest-createspyobj';
-import { LoginResponse } from './dto/login.dto';
+import { TokensResponse } from './dto/login.dto';
 import { UserRole } from 'src/user/schemas/user.schema';
 import { HttpException, HttpStatus } from '@nestjs/common';
 import { SessionResponse } from './dto/session.dto';
@@ -84,7 +84,7 @@ describe('AuthService', () => {
       const spyGenerateTokens = jest
         .spyOn(service, 'generateTokens')
         .mockReturnValue(tokensMock);
-      const expectedResult: LoginResponse = {
+      const expectedResult: TokensResponse = {
         message: 'Logged In successfully',
         tokens: tokensMock,
       };
@@ -271,6 +271,27 @@ describe('AuthService', () => {
       expect(result).toEqual({ message: 'User Logged out successfully!' });
       expect(spyGetUserByEmail).toBeCalledWith(verifiedUserMock.email);
       expect(userMock.updateOne).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('refreshToken', () => {
+    it('should_refresh_tokens_of_a_user_successfully', async () => {
+      const spyGetUserByEmail =
+        userServiceMock.getUserByEmail.mockResolvedValueOnce(verifiedUserMock);
+      const payload = { user: { email: verifiedUserMock.email } };
+      const spyGenerateTokens = jest
+        .spyOn(service, 'generateTokens')
+        .mockReturnValueOnce(tokensMock);
+      const expectedResult: TokensResponse = {
+        message: 'Tokens refreshed successfully',
+        tokens: tokensMock,
+      };
+
+      const result = await service.refreshToken(payload);
+
+      expect(result).toEqual(expectedResult);
+      expect(spyGetUserByEmail).toBeCalledWith(verifiedUserMock.email);
+      expect(spyGenerateTokens).toBeCalledTimes(1);
     });
   });
 

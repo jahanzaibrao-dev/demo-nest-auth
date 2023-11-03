@@ -2,8 +2,8 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsDefined, IsEmail, IsNotEmpty, IsString } from 'class-validator';
 import { JWTTokens } from 'src/user/schemas/user.schema';
 
-export class LoginResponse {
-  @ApiProperty({ example: 'Logged In successfully' })
+export class TokensResponse {
+  @ApiProperty({ example: 'Success Message' })
   message: string;
   @ApiProperty({
     example: {

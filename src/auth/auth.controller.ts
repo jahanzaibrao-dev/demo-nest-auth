@@ -18,11 +18,12 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { LoginDTO, LoginResponse } from './dto/login.dto';
+import { LoginDTO, TokensResponse } from './dto/login.dto';
 import { Request } from 'express';
 import { AuthGuard } from './auth.guard';
 import { SessionResponse } from './dto/session.dto';
 import { SendEmailDto, VerifyEmailDto } from './dto/verifyEmail.dto';
+import { AuthRefreshGuard } from './auth-refresh.guard';
 
 @Controller('auth')
 @ApiTags('Auth')
@@ -46,7 +47,7 @@ export class AuthController {
     return this.authService.verifyEmail(verifyEmailDto);
   }
 
-  @ApiResponse({ status: 200, type: LoginResponse })
+  @ApiResponse({ status: 200, type: TokensResponse })
   @ApiForbiddenResponse({ description: 'User already exists' })
   @Post('/login')
   login(@Body() loginDto: LoginDTO) {
@@ -66,5 +67,13 @@ export class AuthController {
   @Delete('/logout')
   logout(@Req() req: Request) {
     return this.authService.logout(req);
+  }
+
+  @ApiResponse({ status: 200, type: TokensResponse })
+  @UseGuards(AuthRefreshGuard)
+  @ApiBearerAuth()
+  @Post('/refresh')
+  refreshToken(@Req() req: Request) {
+    return this.authService.refreshToken(req);
   }
 }
