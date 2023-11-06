@@ -9,7 +9,7 @@ import { Observable } from 'rxjs';
 import { UserService } from 'src/user/user.service';
 
 @Injectable()
-export class AuthGuard implements CanActivate {
+export class AuthRefreshGuard implements CanActivate {
   constructor(
     private jwtService: JwtService,
     private userService: UserService,
@@ -36,10 +36,10 @@ export class AuthGuard implements CanActivate {
 
     try {
       jwtUser = this.jwtService.verify(token, {
-        secret: process.env.ACCESS_TOKEN_SECRET,
+        secret: process.env.REFRESH_TOKEN_SECRET,
       });
     } catch (e) {
-      throw new UnauthorizedException({ message: 'User is not authorized' });
+      throw new UnauthorizedException({ message: 'Invalid Refresh Token' });
     }
 
     const user = await this.userService.getUserByEmail(jwtUser?.email);
@@ -52,7 +52,7 @@ export class AuthGuard implements CanActivate {
       throw new UnauthorizedException({ message: 'Tokens are not present' });
     }
 
-    if (user.tokens.accessToken !== token) {
+    if (user.tokens.refreshToken !== token) {
       throw new UnauthorizedException({
         message: 'Token is either old or expired',
       });

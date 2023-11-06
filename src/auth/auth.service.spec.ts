@@ -13,7 +13,7 @@ import {
   verifiedUserMock,
 } from './mocks/auth.mocks';
 import { createSpyObj } from 'jest-createspyobj';
-import { LoginResponse } from './dto/login.dto';
+import { TokensResponse } from './dto/login.dto';
 import { UserRole } from 'src/user/schemas/user.schema';
 import { HttpException, HttpStatus } from '@nestjs/common';
 import { SessionResponse } from './dto/session.dto';
@@ -84,7 +84,7 @@ describe('AuthService', () => {
       const spyGenerateTokens = jest
         .spyOn(service, 'generateTokens')
         .mockReturnValue(tokensMock);
-      const expectedResult: LoginResponse = {
+      const expectedResult: TokensResponse = {
         message: 'Logged In successfully',
         tokens: tokensMock,
       };
@@ -272,20 +272,26 @@ describe('AuthService', () => {
       expect(spyGetUserByEmail).toBeCalledWith(verifiedUserMock.email);
       expect(userMock.updateOne).toHaveBeenCalledTimes(1);
     });
+  });
 
-    it('should_throw_an_Exception_if_user_with_provided_email_does_not_exist', () => {
-      const invalidEmail = 'fakeEmail@gmail.com';
-      const payload = { user: { email: invalidEmail } };
+  describe('refreshToken', () => {
+    it('should_refresh_tokens_of_a_user_successfully', async () => {
       const spyGetUserByEmail =
-        userServiceMock.getUserByEmail.mockResolvedValueOnce(null);
+        userServiceMock.getUserByEmail.mockResolvedValueOnce(verifiedUserMock);
+      const payload = { user: { email: verifiedUserMock.email } };
+      const spyGenerateTokens = jest
+        .spyOn(service, 'generateTokens')
+        .mockReturnValueOnce(tokensMock);
+      const expectedResult: TokensResponse = {
+        message: 'Tokens refreshed successfully',
+        tokens: tokensMock,
+      };
 
-      expect(service.logout(payload)).rejects.toThrowError(
-        new HttpException(
-          `User with this email doesn't exist`,
-          HttpStatus.BAD_REQUEST,
-        ),
-      );
-      expect(spyGetUserByEmail).toBeCalledWith(invalidEmail);
+      const result = await service.refreshToken(payload);
+
+      expect(result).toEqual(expectedResult);
+      expect(spyGetUserByEmail).toBeCalledWith(verifiedUserMock.email);
+      expect(spyGenerateTokens).toBeCalledTimes(1);
     });
   });
 

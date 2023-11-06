@@ -13,7 +13,7 @@ import {
   unverifiedUserWithOtpMock,
   verifiedUserMock,
 } from './mocks/auth.mocks';
-import { LoginResponse } from './dto/login.dto';
+import { TokensResponse } from './dto/login.dto';
 import { UserRole } from 'src/user/schemas/user.schema';
 import { Request } from 'express';
 import { SessionResponse } from './dto/session.dto';
@@ -27,6 +27,7 @@ describe('AuthController', () => {
     'verifyEmail',
     'session',
     'logout',
+    'refreshToken',
     'generateTokens',
   ]);
 
@@ -68,7 +69,7 @@ describe('AuthController', () => {
 
   describe('login', () => {
     it('should_login_a_user_and_return_tokens', async () => {
-      const expectedResult: LoginResponse = {
+      const expectedResult: TokensResponse = {
         message: 'Logged In successfully',
         tokens: tokensMock,
       };
@@ -154,6 +155,28 @@ describe('AuthController', () => {
         authServiceMock.logout.mockResolvedValueOnce(expectedResult);
 
       const result = await controller.logout(req as Request);
+
+      expect(result).toEqual(expectedResult);
+      expect(spyLogout).toHaveBeenCalledWith(req);
+    });
+  });
+
+  describe('refreshToken', () => {
+    it('should_refresh_and_return_updated_tokens', async () => {
+      const req: Partial<Request> = {
+        user: {
+          email: 'johnSnow@gmail.com',
+          role: UserRole.USER,
+        },
+      } as Partial<Request>;
+      const expectedResult: TokensResponse = {
+        message: 'Tokens refreshed successfully',
+        tokens: tokensMock,
+      };
+      const spyLogout =
+        authServiceMock.refreshToken.mockResolvedValueOnce(expectedResult);
+
+      const result = await controller.refreshToken(req as Request);
 
       expect(result).toEqual(expectedResult);
       expect(spyLogout).toHaveBeenCalledWith(req);

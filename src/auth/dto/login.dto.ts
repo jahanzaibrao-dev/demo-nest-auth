@@ -1,9 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsNotEmpty, IsString } from 'class-validator';
+import { IsDefined, IsEmail, IsNotEmpty, IsString } from 'class-validator';
 import { JWTTokens } from 'src/user/schemas/user.schema';
 
-export class LoginResponse {
-  @ApiProperty({ example: 'Logged In successfully' })
+export class TokensResponse {
+  @ApiProperty({ example: 'Success Message' })
   message: string;
   @ApiProperty({
     example: {
@@ -19,10 +19,12 @@ export class LoginDTO {
   @IsEmail({}, { message: 'Invalid Email!' })
   @IsNotEmpty({ message: 'Email must not be empty' })
   @IsString({ message: 'Email must be a string' })
+  @IsDefined({ message: 'Email must be defined' })
   readonly email: string;
 
   @ApiProperty({ type: String, name: 'password', example: 'securePhrase' })
   @IsNotEmpty({ message: 'Password must not be empty' })
   @IsString({ message: 'Password must be a string' })
+  @IsDefined({ message: 'Password must be defined' })
   readonly password: string;
 }

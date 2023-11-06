@@ -8,7 +8,7 @@ import {
 
 import { CreateUserDto } from 'src/user/dto/create-user.dto';
 import { UserService } from 'src/user/user.service';
-import { LoginDTO, LoginResponse } from './dto/login.dto';
+import { LoginDTO, TokensResponse } from './dto/login.dto';
 import { JwtService } from '@nestjs/jwt';
 import { SessionResponse } from './dto/session.dto';
 import { MailerService } from '@nestjs-modules/mailer';
@@ -26,7 +26,7 @@ export class AuthService {
     return this.userService.create(createUserDto);
   }
 
-  async login(loginDTO: LoginDTO): Promise<LoginResponse> {
+  async login(loginDTO: LoginDTO): Promise<TokensResponse> {
     const user = await this.userService.validateUser(loginDTO);
 
     if (!user.isVerified) {
@@ -63,7 +63,6 @@ export class AuthService {
       const code = Math.floor(100000 + Math.random() * 900000);
       user.otp = code;
       await user.save();
-      console.log('before send email');
       await this.mailerService.sendMail({
         to: email,
         subject: 'Verification code of nest auth app',
@@ -121,17 +120,21 @@ export class AuthService {
 
   async logout(req) {
     const user = await this.userService.getUserByEmail(req.user?.email);
-    if (!user) {
-      throw new HttpException(
-        `User with this email doesn't exist`,
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-
     await user.updateOne({ $unset: { tokens: 1 } });
 
     return {
       message: 'User Logged out successfully!',
+    };
+  }
+
+  async refreshToken(req): Promise<TokensResponse> {
+    const user = await this.userService.getUserByEmail(req.user?.email);
+    user.tokens = this.generateTokens({ email: user.email, role: user.role });
+    await user.save();
+
+    return {
+      message: 'Tokens refreshed successfully',
+      tokens: user.tokens,
     };
   }
 
