@@ -12,10 +12,8 @@ import {
 } from 'src/auth/mocks/auth.mocks';
 import * as request from 'supertest';
 import { closeTestDB, setupTestDB } from './test-db-setup';
-import { Reflector } from '@nestjs/core';
 
 describe('AuthController (e2e)', () => {
-  let reflector: Reflector;
   let app: INestApplication;
   let server;
   let userModel: Model<User>;
@@ -26,7 +24,6 @@ describe('AuthController (e2e)', () => {
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule, MongooseModule.forRoot(mongoUri)],
-      providers: [Reflector],
     }).compile();
 
     app = moduleFixture.createNestApplication();
@@ -36,7 +33,6 @@ describe('AuthController (e2e)', () => {
     server = app.getHttpServer();
     userModel = moduleFixture.get(getModelToken(User.name));
     authService = moduleFixture.get<AuthService>(AuthService);
-    reflector = moduleFixture.get<Reflector>(Reflector);
   });
 
   afterAll(async () => {
