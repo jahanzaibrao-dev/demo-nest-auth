@@ -12,8 +12,10 @@ import {
 } from 'src/auth/mocks/auth.mocks';
 import * as request from 'supertest';
 import { closeTestDB, setupTestDB } from './test-db-setup';
+import { Reflector } from '@nestjs/core';
 
 describe('AuthController (e2e)', () => {
+  let reflector: Reflector;
   let app: INestApplication;
   let server;
   let userModel: Model<User>;
@@ -24,6 +26,7 @@ describe('AuthController (e2e)', () => {
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule, MongooseModule.forRoot(mongoUri)],
+      providers: [Reflector],
     }).compile();
 
     app = moduleFixture.createNestApplication();
@@ -33,6 +36,7 @@ describe('AuthController (e2e)', () => {
     server = app.getHttpServer();
     userModel = moduleFixture.get(getModelToken(User.name));
     authService = moduleFixture.get<AuthService>(AuthService);
+    reflector = moduleFixture.get<Reflector>(Reflector);
   });
 
   afterAll(async () => {
@@ -75,6 +79,24 @@ describe('AuthController (e2e)', () => {
       const user = await userModel.findOne({ email: savedUser.email });
       expect(response.body.message).toEqual('User deleted successfully!');
       expect(user).toBe(null);
+    });
+
+    it('should_throw_an_exception_if_user_is_not_an_admin', async () => {
+      savedUser.role = UserRole.USER;
+      const tokens = authService.generateTokens({
+        email: savedUser.email,
+        role: savedUser.role,
+      });
+      savedUser.tokens = tokens;
+      await savedUser.save();
+      const accessToken = savedUser.tokens.accessToken;
+
+      const response = await request(server)
+        .delete(`/user/${savedUser._id}`)
+        .auth(accessToken, { type: 'bearer' })
+        .expect(403);
+
+      expect(response.body.message).toEqual('Forbidden resource');
     });
 
     it('should_throw_an_exception_if_user_id_is_not_a_valid_mongo_id', async () => {
@@ -140,6 +162,25 @@ describe('AuthController (e2e)', () => {
         .expect(401);
 
       expect(response.body.message).toEqual('Tokens are not present');
+    });
+
+    it('should_throw_unauthorized_if_tokens_provided_are_expired_or_old', async () => {
+      const oldTokens = JSON.parse(JSON.stringify(savedUser.tokens));
+      const tokens = authService.generateTokens({
+        email: savedUser.email,
+        role: UserRole.USER,
+      });
+      await userModel.updateOne(
+        { email: savedUser.email },
+        { $set: { tokens: tokens } },
+      );
+
+      const response = await request(server)
+        .delete(`/user/${savedUser._id}`)
+        .auth(oldTokens.accessToken, { type: 'bearer' })
+        .expect(401);
+
+      expect(response.body.message).toEqual('Token is either old or expired');
     });
   });
 });

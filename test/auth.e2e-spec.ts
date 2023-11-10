@@ -710,6 +710,12 @@ describe('AuthController (e2e)', () => {
       expect(response.body.message).toEqual('Unauthorized');
     });
 
+    it('should_throw_unauthorized_exception_if_auth_header_is_missing', async () => {
+      const response = await request(server).get('/auth/session').expect(401);
+
+      expect(response.body.message).toEqual('Unauthorized');
+    });
+
     it('should_throw_unauthorized_exception_if_token_is_invalid', async () => {
       const response = await request(server)
         .get('/auth/session')
@@ -742,6 +748,25 @@ describe('AuthController (e2e)', () => {
         .expect(401);
 
       expect(response.body.message).toEqual('Tokens are not present');
+    });
+
+    it('should_throw_unauthorized_if_tokens_provided_are_expired_or_old', async () => {
+      const oldTokens = JSON.parse(JSON.stringify(savedUser.tokens));
+      const tokens = authService.generateTokens({
+        email: savedUser.email,
+        role: UserRole.ADMIN,
+      });
+      await userModel.updateOne(
+        { email: savedUser.email },
+        { $set: { tokens: tokens } },
+      );
+
+      const response = await request(server)
+        .get('/auth/session')
+        .auth(oldTokens.accessToken, { type: 'bearer' })
+        .expect(401);
+
+      expect(response.body.message).toEqual('Token is either old or expired');
     });
   });
 
@@ -787,6 +812,12 @@ describe('AuthController (e2e)', () => {
       expect(response.body.message).toEqual('Unauthorized');
     });
 
+    it('should_throw_unauthorized_exception_if_auth_header_is_missing', async () => {
+      const response = await request(server).delete('/auth/logout').expect(401);
+
+      expect(response.body.message).toEqual('Unauthorized');
+    });
+
     it('should_throw_unauthorized_exception_if_token_is_invalid', async () => {
       const response = await request(server)
         .delete('/auth/logout')
@@ -819,6 +850,25 @@ describe('AuthController (e2e)', () => {
         .expect(401);
 
       expect(response.body.message).toEqual('Tokens are not present');
+    });
+
+    it('should_throw_unauthorized_if_tokens_provided_are_expired_or_old', async () => {
+      const oldTokens = JSON.parse(JSON.stringify(savedUser.tokens));
+      const tokens = authService.generateTokens({
+        email: savedUser.email,
+        role: UserRole.ADMIN,
+      });
+      await userModel.updateOne(
+        { email: savedUser.email },
+        { $set: { tokens: tokens } },
+      );
+
+      const response = await request(server)
+        .delete(`/auth/logout`)
+        .auth(oldTokens.accessToken, { type: 'bearer' })
+        .expect(401);
+
+      expect(response.body.message).toEqual('Token is either old or expired');
     });
   });
 
@@ -861,6 +911,12 @@ describe('AuthController (e2e)', () => {
       expect(response.body.message).toEqual('Unauthorized');
     });
 
+    it('should_throw_unauthorized_exception_if_auth_header_is_missing', async () => {
+      const response = await request(server).post('/auth/refresh').expect(401);
+
+      expect(response.body.message).toEqual('Unauthorized');
+    });
+
     it('should_throw_unauthorized_exception_if_token_is_invalid', async () => {
       const response = await request(server)
         .post('/auth/refresh')
@@ -893,6 +949,25 @@ describe('AuthController (e2e)', () => {
         .expect(401);
 
       expect(response.body.message).toEqual('Tokens are not present');
+    });
+
+    it('should_throw_unauthorized_if_tokens_provided_are_expired_or_old', async () => {
+      const oldTokens = JSON.parse(JSON.stringify(savedUser.tokens));
+      const tokens = authService.generateTokens({
+        email: savedUser.email,
+        role: UserRole.ADMIN,
+      });
+      await userModel.updateOne(
+        { email: savedUser.email },
+        { $set: { tokens: tokens } },
+      );
+
+      const response = await request(server)
+        .post(`/auth/refresh`)
+        .auth(oldTokens.refreshToken, { type: 'bearer' })
+        .expect(401);
+
+      expect(response.body.message).toEqual('Token is either old or expired');
     });
   });
 });

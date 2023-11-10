@@ -9,10 +9,6 @@ export async function setupTestDB() {
 
   await mongoose.connect(uri);
 
-  mongoose.connection.on('connected', () => {
-    console.log('Connected to the test database');
-  });
-
   return uri;
 }
 
