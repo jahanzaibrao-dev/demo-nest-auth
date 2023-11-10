@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import * as request from 'supertest';
 import { AppModule } from './../src/app.module';
-import mongoose, { Model } from 'mongoose';
+import { Model } from 'mongoose';
 import * as bcrypt from 'bcryptjs';
 import {
   createUserDTOMock,
@@ -10,11 +10,12 @@ import {
   mockedRegisterResponse,
   unverifiedUserWithOtpMock,
 } from 'src/auth/mocks/auth.mocks';
-import { getModelToken } from '@nestjs/mongoose';
+import { MongooseModule, getModelToken } from '@nestjs/mongoose';
 import { User, UserRole } from 'src/user/schemas/user.schema';
 import { MailerService } from '@nestjs-modules/mailer';
 import { VerifyEmailDto } from 'src/auth/dto/verifyEmail.dto';
 import { AuthService } from 'src/auth/auth.service';
+import { closeTestDB, setupTestDB } from './test-db-setup';
 
 describe('AuthController (e2e)', () => {
   let app: INestApplication;
@@ -24,8 +25,10 @@ describe('AuthController (e2e)', () => {
   let authService: AuthService;
 
   beforeAll(async () => {
+    const mongoUri = await setupTestDB();
+
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
+      imports: [AppModule, MongooseModule.forRoot(mongoUri)],
     }).compile();
 
     app = moduleFixture.createNestApplication();
@@ -39,7 +42,7 @@ describe('AuthController (e2e)', () => {
   });
 
   afterAll(async () => {
-    await mongoose.connection.close();
+    await closeTestDB();
     await app.close();
   });
 
@@ -707,6 +710,12 @@ describe('AuthController (e2e)', () => {
       expect(response.body.message).toEqual('Unauthorized');
     });
 
+    it('should_throw_unauthorized_exception_if_auth_header_is_missing', async () => {
+      const response = await request(server).get('/auth/session').expect(401);
+
+      expect(response.body.message).toEqual('Unauthorized');
+    });
+
     it('should_throw_unauthorized_exception_if_token_is_invalid', async () => {
       const response = await request(server)
         .get('/auth/session')
@@ -739,6 +748,25 @@ describe('AuthController (e2e)', () => {
         .expect(401);
 
       expect(response.body.message).toEqual('Tokens are not present');
+    });
+
+    it('should_throw_unauthorized_if_tokens_provided_are_expired_or_old', async () => {
+      const oldTokens = JSON.parse(JSON.stringify(savedUser.tokens));
+      const tokens = authService.generateTokens({
+        email: savedUser.email,
+        role: UserRole.ADMIN,
+      });
+      await userModel.updateOne(
+        { email: savedUser.email },
+        { $set: { tokens: tokens } },
+      );
+
+      const response = await request(server)
+        .get('/auth/session')
+        .auth(oldTokens.accessToken, { type: 'bearer' })
+        .expect(401);
+
+      expect(response.body.message).toEqual('Token is either old or expired');
     });
   });
 
@@ -784,6 +812,12 @@ describe('AuthController (e2e)', () => {
       expect(response.body.message).toEqual('Unauthorized');
     });
 
+    it('should_throw_unauthorized_exception_if_auth_header_is_missing', async () => {
+      const response = await request(server).delete('/auth/logout').expect(401);
+
+      expect(response.body.message).toEqual('Unauthorized');
+    });
+
     it('should_throw_unauthorized_exception_if_token_is_invalid', async () => {
       const response = await request(server)
         .delete('/auth/logout')
@@ -816,6 +850,25 @@ describe('AuthController (e2e)', () => {
         .expect(401);
 
       expect(response.body.message).toEqual('Tokens are not present');
+    });
+
+    it('should_throw_unauthorized_if_tokens_provided_are_expired_or_old', async () => {
+      const oldTokens = JSON.parse(JSON.stringify(savedUser.tokens));
+      const tokens = authService.generateTokens({
+        email: savedUser.email,
+        role: UserRole.ADMIN,
+      });
+      await userModel.updateOne(
+        { email: savedUser.email },
+        { $set: { tokens: tokens } },
+      );
+
+      const response = await request(server)
+        .delete(`/auth/logout`)
+        .auth(oldTokens.accessToken, { type: 'bearer' })
+        .expect(401);
+
+      expect(response.body.message).toEqual('Token is either old or expired');
     });
   });
 
@@ -858,6 +911,12 @@ describe('AuthController (e2e)', () => {
       expect(response.body.message).toEqual('Unauthorized');
     });
 
+    it('should_throw_unauthorized_exception_if_auth_header_is_missing', async () => {
+      const response = await request(server).post('/auth/refresh').expect(401);
+
+      expect(response.body.message).toEqual('Unauthorized');
+    });
+
     it('should_throw_unauthorized_exception_if_token_is_invalid', async () => {
       const response = await request(server)
         .post('/auth/refresh')
@@ -890,6 +949,25 @@ describe('AuthController (e2e)', () => {
         .expect(401);
 
       expect(response.body.message).toEqual('Tokens are not present');
+    });
+
+    it('should_throw_unauthorized_if_tokens_provided_are_expired_or_old', async () => {
+      const oldTokens = JSON.parse(JSON.stringify(savedUser.tokens));
+      const tokens = authService.generateTokens({
+        email: savedUser.email,
+        role: UserRole.ADMIN,
+      });
+      await userModel.updateOne(
+        { email: savedUser.email },
+        { $set: { tokens: tokens } },
+      );
+
+      const response = await request(server)
+        .post(`/auth/refresh`)
+        .auth(oldTokens.refreshToken, { type: 'bearer' })
+        .expect(401);
+
+      expect(response.body.message).toEqual('Token is either old or expired');
     });
   });
 });

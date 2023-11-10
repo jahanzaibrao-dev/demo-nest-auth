@@ -15,7 +15,11 @@ import { HttpException, HttpStatus } from '@nestjs/common';
 
 describe('UserService', () => {
   let service: UserService;
-  const userModelMock = createSpyObj('User', ['findOne', 'create']);
+  const userModelMock = createSpyObj('User', [
+    'findOne',
+    'create',
+    'deleteOne',
+  ]);
   const createSpy = jest.fn();
 
   beforeEach(async () => {
@@ -137,6 +141,42 @@ describe('UserService', () => {
       expect(result).toEqual(verifiedUserMock);
       expect(findOneSpy).toHaveBeenCalledWith({
         email: verifiedUserMock.email,
+      });
+    });
+  });
+
+  describe('deleteUser', () => {
+    it('should_delete_a_user_successfully', async () => {
+      const mockedUserId = 's0meus3rid';
+      const findOneSpy =
+        userModelMock.findOne.mockResolvedValueOnce(verifiedUserMock);
+      const deleteOneSpy = userModelMock.deleteOne.mockResolvedValueOnce({});
+
+      const result = await service.deleteUser(mockedUserId);
+
+      expect(result.message).toEqual('User deleted successfully!');
+      expect(findOneSpy).toHaveBeenCalledWith({
+        _id: mockedUserId,
+      });
+      expect(deleteOneSpy).toHaveBeenCalledWith({
+        _id: mockedUserId,
+      });
+    });
+
+    it('should_throw_an_exception_if_user_does_not_exists', () => {
+      const mockedUserId = 's0meus3rid';
+      const findOneSpy = userModelMock.findOne.mockResolvedValueOnce(null);
+
+      const result = service.deleteUser(mockedUserId);
+
+      expect(result).rejects.toThrowError(
+        new HttpException(
+          `User with this id doesn't exist`,
+          HttpStatus.BAD_REQUEST,
+        ),
+      );
+      expect(findOneSpy).toHaveBeenCalledWith({
+        _id: mockedUserId,
       });
     });
   });
