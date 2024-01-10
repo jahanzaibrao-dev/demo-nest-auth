@@ -8,7 +8,8 @@ import { MailerModule } from '@nestjs-modules/mailer';
 
 const getDatabaseURI = () => {
   if (process.env.NODE_ENV == 'test') {
-    return process.env.TEST_DB_URI;
+    console.log('in app test db');
+    return;
   }
   return process.env.DB_CONNECTION_URI || '';
 };
@@ -33,7 +34,9 @@ const getDatabaseURI = () => {
       preview: true,
     }),
     UserModule,
-    MongooseModule.forRoot(getDatabaseURI()),
+    ...(process.env.NODE_ENV !== 'test'
+      ? [MongooseModule.forRoot(getDatabaseURI())]
+      : []),
     AuthModule,
   ],
 })

@@ -50,6 +50,22 @@ export class UserService {
     return user;
   }
 
+  async deleteUser(id: string) {
+    const userExist = await this.user.findOne({ _id: id });
+    if (!userExist) {
+      throw new HttpException(
+        `User with this id doesn't exist`,
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    await this.user.deleteOne({ _id: id });
+
+    return {
+      message: 'User deleted successfully!',
+    };
+  }
+
   async getUserByEmail(email: string) {
     return this.user.findOne({ email });
   }

@@ -25,6 +25,11 @@ export class AuthGuard implements CanActivate {
 
   async validateRequest(req) {
     const authHeader = req.headers.authorization;
+
+    if (!authHeader) {
+      throw new UnauthorizedException();
+    }
+
     const bearer = authHeader.split(' ')[0];
     const token = authHeader.split(' ')[1];
 
