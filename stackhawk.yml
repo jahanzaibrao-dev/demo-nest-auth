@@ -14,6 +14,8 @@ app:
   autoPolicy: true
   autoInputVectors: true
   # Configuration Docs: https://docs.stackhawk.com/hawkscan/configuration/
+hawk:
+  failureThreshold: medium
 # -- If Authenticated Scanning is needed, add here --
 # Authenticated Scanning Docs: https://docs.stackhawk.com/hawkscan/authenticated-scanning.html
 # Authenticated Scanning Repo: https://github.com/kaakaww/scan-configuration/tree/main/Authentication

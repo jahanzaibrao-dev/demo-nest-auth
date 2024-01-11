@@ -57,3 +57,4 @@ jobs:
         uses: stackhawk/hawkscan-action@v2.1.2
         with:
           apiKey: ${{ secrets.HAWK_API_KEY }}
+          codeScanningAlerts: true
