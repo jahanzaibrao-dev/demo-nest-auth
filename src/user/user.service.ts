@@ -10,7 +10,9 @@ import { LoginDTO } from 'src/auth/dto/login.dto';
 export class UserService {
   constructor(@InjectModel(User.name) private user: Model<User>) {}
   async create(createUserDto: CreateUserDto): Promise<CreateUserResponse> {
-    const userExist = await this.user.findOne({ email: createUserDto.email });
+    const userExist = await this.user.findOne({
+      email: { $eq: createUserDto.email },
+    });
     if (userExist) {
       throw new HttpException('User already exists', HttpStatus.FORBIDDEN);
     }
@@ -30,7 +32,7 @@ export class UserService {
   }
 
   async validateUser(loginDto: LoginDTO) {
-    const user = await this.user.findOne({ email: loginDto.email });
+    const user = await this.user.findOne({ email: { $eq: loginDto.email } });
     if (!user) {
       throw new HttpException(
         `The provided username or password is incorrect`,
@@ -51,7 +53,7 @@ export class UserService {
   }
 
   async deleteUser(id: string) {
-    const userExist = await this.user.findOne({ _id: id });
+    const userExist = await this.user.findOne({ _id: { $eq: id } });
     if (!userExist) {
       throw new HttpException(
         `User with this id doesn't exist`,
@@ -59,7 +61,7 @@ export class UserService {
       );
     }
 
-    await this.user.deleteOne({ _id: id });
+    await this.user.deleteOne({ _id: { $eq: id } });
 
     return {
       message: 'User deleted successfully!',
@@ -67,6 +69,6 @@ export class UserService {
   }
 
   async getUserByEmail(email: string) {
-    return this.user.findOne({ email });
+    return this.user.findOne({ email: { $eq: email } });
   }
 }
