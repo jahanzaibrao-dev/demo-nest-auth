@@ -16,6 +16,17 @@ jobs:
       matrix:
         node-version: [lts/*]
 
+    env:
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      DB_CONNECTION_URI: ${{ secrets.DB_CONNECTION_URI }}
+      ACCESS_TOKEN_SECRET: ${{ secrets.ACCESS_TOKEN_SECRET }}
+      REFRESH_TOKEN_SECRET: ${{ secrets.REFRESH_TOKEN_SECRET }}
+      SMTP_HOST: ${{ secrets.SMTP_HOST }}
+      SMTP_PORT: ${{ secrets.SMTP_PORT }}
+      SMTP_USER: ${{ secrets.SMTP_USER }}
+      SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+      TEST_DB_URI: ${{ secrets.TEST_DB_URI }}
+
     steps:
       - uses: actions/checkout@v2
       - name: Use Node.js ${{ matrix.node-version }}
@@ -35,29 +46,9 @@ jobs:
 
       - name: Run e2e Tests
         run: npm run test:e2e
-        env:
-          AWS_REGION: ${{ secrets.AWS_REGION }}
-          DB_CONNECTION_URI: ${{ secrets.DB_CONNECTION_URI }}
-          ACCESS_TOKEN_SECRET: ${{ secrets.ACCESS_TOKEN_SECRET }}
-          REFRESH_TOKEN_SECRET: ${{ secrets.REFRESH_TOKEN_SECRET }}
-          SMTP_HOST: ${{ secrets.SMTP_HOST }}
-          SMTP_PORT: ${{ secrets.SMTP_PORT }}
-          SMTP_USER: ${{ secrets.SMTP_USER }}
-          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
-          TEST_DB_URI: ${{ secrets.TEST_DB_URI }}
 
       - name: Build NEST Auth API
         run: npm run build
-        env:
-          AWS_REGION: ${{ secrets.AWS_REGION }}
-          DB_CONNECTION_URI: ${{ secrets.DB_CONNECTION_URI }}
-          ACCESS_TOKEN_SECRET: ${{ secrets.ACCESS_TOKEN_SECRET }}
-          REFRESH_TOKEN_SECRET: ${{ secrets.REFRESH_TOKEN_SECRET }}
-          SMTP_HOST: ${{ secrets.SMTP_HOST }}
-          SMTP_PORT: ${{ secrets.SMTP_PORT }}
-          SMTP_USER: ${{ secrets.SMTP_USER }}
-          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
-          TEST_DB_URI: ${{ secrets.TEST_DB_URI }}
 
       - name: Start Server
         run: nohup npm run start &
