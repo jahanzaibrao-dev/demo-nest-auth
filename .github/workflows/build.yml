@@ -58,3 +58,11 @@ jobs:
           SMTP_USER: ${{ secrets.SMTP_USER }}
           SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
           TEST_DB_URI: ${{ secrets.TEST_DB_URI }}
+
+      - name: Start Server
+        run: nohup npm run start &
+
+      - name: Run Hawk Scan
+        uses: stackhawk/hawkscan-action@v2.1.2
+        with:
+          apiKey: ${{ secrets.HAWK_API_KEY }}
