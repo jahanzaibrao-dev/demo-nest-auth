@@ -76,7 +76,7 @@ describe('UserService', () => {
         new HttpException('User already exists', HttpStatus.BAD_REQUEST),
       );
       expect(findOneSpy).toHaveBeenCalledWith({
-        email: createUserDTOMock.email,
+        email: { $eq: createUserDTOMock.email },
       });
     });
   });
@@ -93,7 +93,7 @@ describe('UserService', () => {
 
       expect(result).toEqual(verifiedUserMock);
       expect(findOneSpy).toHaveBeenCalledWith({
-        email: loginDtoMock.email,
+        email: { $eq: loginDtoMock.email },
       });
       expect(spyBcryptCompare).toHaveBeenCalledTimes(1);
     });
@@ -108,7 +108,7 @@ describe('UserService', () => {
         ),
       );
       expect(findOneSpy).toHaveBeenCalledWith({
-        email: loginDtoMock.email,
+        email: { $eq: loginDtoMock.email },
       });
     });
 
@@ -126,7 +126,7 @@ describe('UserService', () => {
         ),
       );
       expect(findOneSpy).toHaveBeenCalledWith({
-        email: loginDtoMock.email,
+        email: { $eq: loginDtoMock.email },
       });
     });
   });
@@ -140,7 +140,7 @@ describe('UserService', () => {
 
       expect(result).toEqual(verifiedUserMock);
       expect(findOneSpy).toHaveBeenCalledWith({
-        email: verifiedUserMock.email,
+        email: { $eq: verifiedUserMock.email },
       });
     });
   });
@@ -156,10 +156,10 @@ describe('UserService', () => {
 
       expect(result.message).toEqual('User deleted successfully!');
       expect(findOneSpy).toHaveBeenCalledWith({
-        _id: mockedUserId,
+        _id: { $eq: mockedUserId },
       });
       expect(deleteOneSpy).toHaveBeenCalledWith({
-        _id: mockedUserId,
+        _id: { $eq: mockedUserId },
       });
     });
 
@@ -176,7 +176,7 @@ describe('UserService', () => {
         ),
       );
       expect(findOneSpy).toHaveBeenCalledWith({
-        _id: mockedUserId,
+        _id: { $eq: mockedUserId },
       });
     });
   });
