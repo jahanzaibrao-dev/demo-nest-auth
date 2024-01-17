@@ -53,8 +53,7 @@ jobs:
       - name: Start Server
         run: nohup npm run start &
 
-      - name: Run Hawk Scan
-        uses: stackhawk/hawkscan-action@v2.1.2
+      - name: Run ZAP Scan
+        uses: zaproxy/action-api-scan@v0.5.0
         with:
-          apiKey: ${{ secrets.HAWK_API_KEY }}
-          codeScanningAlerts: true
+          target: 'http://localhost:8080/api/docs-json'
