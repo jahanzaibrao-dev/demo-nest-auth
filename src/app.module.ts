@@ -5,6 +5,8 @@ import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
 import { AuthService } from './auth/auth.service';
 import { MailerModule } from '@nestjs-modules/mailer';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 
 const getDatabaseURI = () => {
   if (process.env.NODE_ENV == 'test') {
@@ -15,7 +17,13 @@ const getDatabaseURI = () => {
 };
 
 @Module({
-  providers: [AuthService],
+  providers: [
+    AuthService,
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
   imports: [
     ConfigModule.forRoot(),
     MailerModule.forRoot({
@@ -38,6 +46,12 @@ const getDatabaseURI = () => {
       ? [MongooseModule.forRoot(getDatabaseURI())]
       : []),
     AuthModule,
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000,
+        limit: 10,
+      },
+    ]),
   ],
 })
 export class AppModule {}
